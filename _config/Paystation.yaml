@@ -1,0 +1,25 @@
+name: Paystation
+---
+
+PaymentFactory:
+  PaystationThreeParty:
+    title: 'Paystation Payment 3 Party'
+    gateway_classes:
+      live: 'PaystationGateway_ThreeParty'
+      dev: 'PaystationGateway_ThreeParty'
+    processor: 'PaystationProcessor_ThreeParty'
+    model: 'Paystation'
+
+PaystationGateway_ThreeParty:
+  url:
+    'https://www.paystation.co.nz/direct/paystation.dll'
+  live:
+    test_mode:
+      false
+    lookup_url:
+      'https://payments.paystation.co.nz/lookup/'
+  dev:
+    test_mode:
+      true
+    lookup_url:
+      'https://www.paystation.co.nz/lookup/quick/'
