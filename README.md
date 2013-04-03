@@ -6,8 +6,8 @@ SilverStripe Payment Paymentstation Module
 Maintainer Contacts
 -------------------
 Frank Mullenger (frankmullenger_AT_gmail(dot)com)
-* [Deadly Technology Blog](http://deadlytechnology.com/silverstripe/)
-* [SwipeStripe Ecommerce](http://swipestripe.com)
+* [Blog](http://deadlytechnology.com/silverstripe/)
+* [Ecommerce Module](http://swipestripe.com)
 
 Requirements
 ------------
@@ -62,3 +62,6 @@ PaystationGateway_ThreeParty:
 ```
 
 3. Remember to ?flush=1 after changes to the config YAML files
+
+4. Set the return URL on your Paystation account to: http://yoursite.com/PaystationProcessor_ThreeParty/complete/
+

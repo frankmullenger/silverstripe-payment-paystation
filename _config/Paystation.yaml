@@ -3,7 +3,7 @@ name: Paystation
 
 PaymentFactory:
   PaystationThreeParty:
-    title: 'Paystation Payment 3 Party'
+    title: 'Paystation Payment'
     gateway_classes:
       live: 'PaystationGateway_ThreeParty'
       dev: 'PaystationGateway_ThreeParty'
