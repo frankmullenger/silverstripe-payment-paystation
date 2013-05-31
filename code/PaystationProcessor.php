@@ -69,7 +69,7 @@ class PaystationProcessor_ThreeParty extends PaymentProcessor {
     $this->gateway = PaymentFactory::get_gateway($methodName);
 
     // Query the gateway for the payment result
-    $result = $this->gateway->checkPayment($request);
+    $result = $this->gateway->check($request);
     $this->payment->updateStatus($result);
 
     $this->doRedirect();

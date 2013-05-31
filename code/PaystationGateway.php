@@ -12,6 +12,15 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
     'USD' => 'United States Dollar',
     'GBP' => 'Great British Pound'
   );
+  
+  public function getSupportedCurrencies() {
+
+    $config = $this->getConfig();
+    if (isset($config['supported_currencies'])) {
+      $this->supportedCurrencies = $config['supported_currencies'];
+    }
+    return $this->supportedCurrencies;
+  }
 
   /**
    * Error code (ec) and error message (em) details
@@ -134,7 +143,7 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
    * @param SS_HTTPRequest $request
    * @return PaymentGateway_Result
    */
-  public function checkPayment($request) {
+  public function check($request) {
 
     $config = $this->getConfig();
 
