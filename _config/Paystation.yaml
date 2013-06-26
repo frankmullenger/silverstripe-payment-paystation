@@ -7,6 +7,7 @@ PaymentFactory:
     gateway_classes:
       live: 'PaystationGateway_ThreeParty'
       dev: 'PaystationGateway_ThreeParty'
+      test: 'PaystationGateway_ThreeParty_Mock'
     processor: 'PaystationProcessor_ThreeParty'
     model: 'Paystation'
 
@@ -19,6 +20,11 @@ PaystationGateway_ThreeParty:
     lookup_url:
       'https://payments.paystation.co.nz/lookup/'
   dev:
+    test_mode:
+      true
+    lookup_url:
+      'https://www.paystation.co.nz/lookup/quick/'
+  test:
     test_mode:
       true
     lookup_url:

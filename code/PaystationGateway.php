@@ -69,34 +69,12 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
    * @return String Transaction ID from Paystation
    */
   public function authorise($data) {
-
-    //Authorise the payment, return transaction ID
-    $config = $this->getConfig();
-    $url = Config::inst()->get('PaystationGateway_ThreeParty', 'url');
-    $paystationTransactionID = null;
-
-    $paystationURL  = $url;
-    $amount = $data['Amount'] * 100;
-    $pstn_pi  = $config['authentication']['paystation_id']; 
-    $pstn_gi  = $config['authentication']['gateway_id'];
-    $testMode = $config['test_mode']; 
-    $site = $config['site_description'];
-    $merchantSession  = urlencode($site.'-'.time().'-'.$this->makePaystationSessionID(8,8)); //max length of ms is 64 char 
-    $pstn_mr = $this->merchantRef;
-
-
-    //Create URL to initiate transation with PayStation
-    $paystationParams = "paystation&pstn_pi=".$pstn_pi.
-                        "&pstn_gi=".$pstn_gi.
-                        "&pstn_ms=".$merchantSession.
-                        "&pstn_am=".$amount.
-                        "&pstn_mr=".$pstn_mr.
-                        "&pstn_nr=t";
-    
-    if ($testMode) $paystationParams = $paystationParams."&pstn_tm=t";
+  	
+  	$paystationTransactionID = null;
 
     //Do Transaction Initiation POST
-    $initiationResult = $this->directTransaction($paystationURL, $paystationParams);
+    $initiationResult = $this->makeAuthoriseRequest($data);
+
     $p = xml_parser_create();
     xml_parse_into_struct($p, $initiationResult, $vals, $tags);
     xml_parser_free($p);
@@ -122,6 +100,35 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
 
     return $paystationTransactionID;
   }
+  
+  public function makeAuthoriseRequest($data) {
+  	
+  	//Authorise the payment, return transaction ID
+    $config = $this->getConfig();
+    $url = Config::inst()->get('PaystationGateway_ThreeParty', 'url');
+    
+    $paystationURL  = $url;
+    $amount = $data['Amount'] * 100;
+    $pstn_pi  = $config['authentication']['paystation_id']; 
+    $pstn_gi  = $config['authentication']['gateway_id'];
+    $testMode = $config['test_mode']; 
+    $site = $config['site_description'];
+    $merchantSession  = urlencode($site.'-'.time().'-'.$this->makePaystationSessionID(8,8)); //max length of ms is 64 char 
+    $pstn_mr = $this->merchantRef;
+
+
+    //Create URL to initiate transation with PayStation
+    $paystationParams = "paystation&pstn_pi=".$pstn_pi.
+                        "&pstn_gi=".$pstn_gi.
+                        "&pstn_ms=".$merchantSession.
+                        "&pstn_am=".$amount.
+                        "&pstn_mr=".$pstn_mr.
+                        "&pstn_nr=t";
+    
+    if ($testMode) $paystationParams = $paystationParams."&pstn_tm=t";
+    
+    return $this->directTransaction($paystationURL, $paystationParams);
+  }
 
   /**
    * Process the payment by redirecting user to Paystation
@@ -131,10 +138,10 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
   public function process($data) {
 
     if (!isset($this->digitalOrder) || !$this->digitalOrder) {
-      //$this->gatewayResponse = new SS_HTTPResponse('Internal Server Error', 500);
       return new PaymentGateway_Failure('No URL for payment to be processed');
     }
     Controller::curr()->redirect($this->digitalOrder);
+    return;
   }
 
   /**
@@ -183,7 +190,7 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
    * @param String $params Data to POST
    * @return Mixed String|False On success returns string of XML respone from PayStation, failure returns false
    */
-  private function directTransaction ($url, $params){
+  protected function directTransaction ($url, $params){
 
     $userAgent = null;
     
@@ -236,7 +243,7 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
    * @param Int $max
    * @return String A new payment session ID
    */
-  private function makePaystationSessionID ($min = 8, $max = 8) {
+  protected function makePaystationSessionID ($min = 8, $max = 8) {
 
     $seed = (double)microtime()*getrandmax();
     srand($seed);
@@ -256,6 +263,91 @@ class PaystationGateway_ThreeParty extends PaymentGateway_GatewayHosted {
     endif;
   
     return $pass;
+  }
+
+}
+
+class PaystationGateway_ThreeParty_Mock extends PaystationGateway_ThreeParty {
+	
+	public function makeAuthoriseRequest($data) {
+
+  	//Mock request string
+    $mock = isset($data['mock']) ? $data['mock'] : false;
+    if ($mock) {
+    	switch($mock) {
+
+	    	//Gateway could not be reached, curl_exec returns false
+	    	case 'incomplete':
+	    		$request_string = false;
+	    		break;
+	    	case 'failure':
+	    		$request_string = '
+					<InitiationRequestResponse>
+						<Username>608622</Username>
+						<RequestIP>121.74.176.232</RequestIP>
+						<RequestUserAgent>Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:20.0) Gecko/20100101 Firefox/20.0</RequestUserAgent>
+						<RequestHttpReferrer/>
+						<PaymentRequestTime>2013-06-03 16:53:20</PaymentRequestTime>
+						<DigitalOrder/>
+						<DigitalOrderTime></DigitalOrderTime>
+						<DigitalReceiptTime/>
+						<PaystationTransactionID/>
+					</InitiationRequestResponse>';
+	    		break;
+	    	case 'success':
+	    	default:
+					$request_string = '
+					<InitiationRequestResponse>
+						<Username>608622</Username>
+						<RequestIP>121.74.176.232</RequestIP>
+						<RequestUserAgent>Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:20.0) Gecko/20100101 Firefox/20.0</RequestUserAgent>
+						<RequestHttpReferrer/>
+						<PaymentRequestTime>2013-06-03 16:53:20</PaymentRequestTime>
+						<DigitalOrder>https://payments.paystation.co.nz/hosted/?hk=nkuQnREHVcDJOI8NyoVDeUboEm5iMwniG9npMCrn2ns%3D</DigitalOrder>
+						<DigitalOrderTime>2013-06-03 16:53:20</DigitalOrderTime>
+						<DigitalReceiptTime/>
+						<PaystationTransactionID>0021873828-01</PaystationTransactionID>
+					</InitiationRequestResponse>';
+	    		break;
+	    }
+    }
+    else {
+    	throw new Exception('Mock string not passed');
+    }
+    
+    return $request_string;
+  }
+
+  /**
+   * Check the payment by using quick lookup API to retrieve payment status
+   * 
+   * @param SS_HTTPRequest $request
+   * @return PaymentGateway_Result
+   */
+  public function check($request) {
+
+    $config = $this->getConfig();
+
+    $url = $config['lookup_url'];
+    $transactionID = $request->getVar('ti');
+    $paystationID = $config['authentication']['paystation_id'];
+
+    $service = new RestfulService($url);
+    $service->setQueryString(array(
+      'pi' => $paystationID,
+      'ti' => $transactionID
+    ));
+    $response = $service->request();
+
+    $paymentStatus = $response->xpath_one('LookupResponse/PaystationErrorCode');
+    $paymentStatus = (string)$paymentStatus;
+
+    if ($paymentStatus == 0) {
+      return new PaymentGateway_Success();
+    }
+    else {
+      return new PaymentGateway_Failure($errorCodes[$paymentStatus]);
+    }
   }
 
 }
